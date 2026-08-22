@@ -56,7 +56,7 @@ const marqueeItems = [
   ['✦', 'Three nights'], ['♫', 'Live artists'], ['◎', 'Garba & Dandiya'], ['✧', 'Festive fashion'], ['5K+', 'Celebrating together'],
 ];
 
-export default function Home() {
+export default function Home({ staticPreview = false }: { staticPreview?: boolean }) {
   const [form, setForm] = useState<LeadForm>(initialForm);
   const [errors, setErrors] = useState<FormErrors>({});
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
@@ -147,6 +147,14 @@ export default function Home() {
     if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) nextErrors.email = 'Enter a valid email address.';
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
+    if (staticPreview) {
+      setStatus('success');
+      setForm(initialForm);
+      setOtpSent(false);
+      setOtp('');
+      setPhoneVerified(false);
+      return;
+    }
     setStatus('submitting');
     try {
       const response = await fetch('/api/leads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, phoneVerified }) });
@@ -223,13 +231,13 @@ export default function Home() {
           <div className="df-field df-field-wide"><label htmlFor="mobile">Mobile number <b>*</b></label><div className="df-phone-row"><input id="mobile" type="tel" value={form.phone} onChange={(event) => updateField('phone', event.target.value)} aria-invalid={Boolean(errors.phone)} placeholder="98765 43210" autoComplete="tel" disabled={phoneVerified} /><button type="button" onClick={phoneVerified ? undefined : requestOtp}>{phoneVerified ? '✓ Verified' : otpSent ? 'Resend OTP' : 'Send OTP'}</button></div>{errors.phone && <small>{errors.phone}</small>}{otpSent && !phoneVerified && <div className="df-otp"><input aria-label="Six digit OTP" inputMode="numeric" autoComplete="one-time-code" value={otp} onChange={(event) => updateOtp(event.target.value)} placeholder="Enter 6-digit OTP" maxLength={6} /><span>{otpMessage}</span></div>}{phoneVerified && <span className="df-verified">Mobile number verified successfully.</span>}</div>
           <label className="df-field"><span>Email <em>optional</em></span><input type="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} aria-invalid={Boolean(errors.email)} placeholder="you@example.com" autoComplete="email" />{errors.email && <small>{errors.email}</small>}</label>
           <label className="df-field"><span>Preferred night <em>optional</em></span><select value={form.preferredDay} onChange={(event) => updateField('preferredDay', event.target.value)}><option value="">Choose a date</option><option>17 October</option><option>18 October</option><option>19 October</option><option>Flexible / all three</option></select></label>
-          <button className="df-btn df-form-submit" disabled={status === 'submitting' || !phoneVerified}>{status === 'submitting' ? 'Registering…' : phoneVerified ? 'Register my interest' : 'Verify mobile to continue'}</button><p className="df-form-note">Preview OTP flow only. Connect an approved SMS provider before launch.</p><div className="df-form-status" aria-live="polite">{status === 'success' && <p>Thank you. Your registration has been received.</p>}{status === 'error' && <p>We couldn&apos;t submit your details. Please try again.</p>}</div>
+          <button className="df-btn df-form-submit" disabled={status === 'submitting' || !phoneVerified}>{status === 'submitting' ? 'Registering…' : phoneVerified ? 'Register my interest' : 'Verify mobile to continue'}</button><p className="df-form-note">{staticPreview ? 'Static preview only. Form data is not submitted.' : 'Preview OTP flow only. Connect an approved SMS provider before launch.'}</p><div className="df-form-status" aria-live="polite">{status === 'success' && <p>{staticPreview ? 'Preview complete. No data was submitted.' : 'Thank you. Your registration has been received.'}</p>}{status === 'error' && <p>We couldn&apos;t submit your details. Please try again.</p>}</div>
         </form>
       </div></section>
 
       <section className="df-section df-faq" id="faqs"><div className="df-wrap df-faq-grid"><div className="df-faq-head df-reveal"><p className="df-eyebrow">Plan with confidence</p><h2>Everything you need<br />before the first beat.</h2><p>Dates, passes, artist updates and practical details in one clear place.</p></div><div className="df-faq-list df-reveal">{faqs.map(([question, answer], index) => <details key={question} open={index === 0}><summary>{question}<span>+</span></summary><p>{answer}</p></details>)}</div></div></section>
 
-      <footer className="df-footer"><div className="df-wrap"><div className="df-footer-bottom"><div><span>Organised by</span><Image src="/images/times-internet.png" alt="Times Internet" width={174} height={50} /></div><nav><a href="#festival">Festival</a><a href="#lineup">Lineup</a><a href="#dates">Dates</a><a href="#venue">Venue</a><a href="/privacy">Privacy Policy</a><a href="/terms">Terms & Conditions</a></nav><p>© 2026 Times Internet<br />Details subject to final confirmation.</p></div></div></footer>
+      <footer className="df-footer"><div className="df-wrap"><div className="df-footer-bottom"><div><span>Organised by</span><Image src="/images/times-internet.png" alt="Times Internet" width={174} height={50} /></div><nav><a href="#festival">Festival</a><a href="#lineup">Lineup</a><a href="#dates">Dates</a><a href="#venue">Venue</a><a href={staticPreview ? "#faqs" : "/privacy"}>Privacy Policy</a><a href={staticPreview ? "#faqs" : "/terms"}>Terms & Conditions</a></nav><p>© 2026 Times Internet<br />Details subject to final confirmation.</p></div></div></footer>
       <div className="df-theme-preview">
         {themeOpen && <section className="df-theme-panel" id="theme-preview-panel" role="dialog" aria-label="Preview colour themes">
           <div className="df-theme-panel-head"><div><span>Stakeholder preview</span><h2>Colour themes</h2></div><button type="button" aria-label="Close theme preview" onClick={() => setThemeOpen(false)}>×</button></div>
