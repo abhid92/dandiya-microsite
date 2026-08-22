@@ -4,11 +4,10 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 
-type LeadForm = { name: string; phone: string; email: string; preferredDay: string };
+type LeadForm = { name: string; phone: string; email: string };
 type FormErrors = Partial<Record<keyof LeadForm, string>>;
 type ThemeId = 'marigold' | 'peacock' | 'bandhani' | 'gulabi' | 'kesari' | 'indigo' | 'emerald' | 'noir';
-type PaymentMethod = 'upi' | 'card' | 'netbanking';
-const initialForm: LeadForm = { name: '', phone: '', email: '', preferredDay: '' };
+const initialForm: LeadForm = { name: '', phone: '', email: '' };
 const previewOtp = '246810';
 const passPrice = 999;
 
@@ -61,9 +60,9 @@ const marqueeItems = [
 export default function Home({ staticPreview = false }: { staticPreview?: boolean }) {
   const [form, setForm] = useState<LeadForm>(initialForm);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [menuOpen, setMenuOpen] = useState(false);
   const [showMobileCta, setShowMobileCta] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [phoneVerified, setPhoneVerified] = useState(false);
@@ -71,12 +70,14 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
   const [theme, setTheme] = useState<ThemeId>('marigold');
   const [themeOpen, setThemeOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [bookingConfirmed, setBookingConfirmed] = useState(false);
   const [bookingDate, setBookingDate] = useState('17 October');
   const [ticketCount, setTicketCount] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('upi');
   const [bookingName, setBookingName] = useState('');
   const [bookingPhone, setBookingPhone] = useState('');
   const [bookingEmail, setBookingEmail] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [couponMessage, setCouponMessage] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState('');
 
@@ -86,7 +87,10 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
       if (entry.isIntersecting) { entry.target.classList.add('is-visible'); observer.unobserve(entry.target); }
     }), { threshold: 0.1 });
     elements.forEach((element) => observer.observe(element));
-    const handleScroll = () => setShowMobileCta(window.scrollY > window.innerHeight * 2);
+    const handleScroll = () => {
+      setShowMobileCta(window.scrollY > window.innerHeight * 2);
+      setShowScrollTop(window.scrollY > 600);
+    };
     handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => { observer.disconnect(); window.removeEventListener('scroll', handleScroll); };
@@ -98,7 +102,7 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
       if (themes.some((item) => item.id === savedTheme)) setTheme(savedTheme as ThemeId);
     });
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { setThemeOpen(false); setCheckoutOpen(false); }
+      if (event.key === 'Escape') { setThemeOpen(false); setCheckoutOpen(false); setBookingConfirmed(false); }
     };
     document.addEventListener('keydown', closeOnEscape);
     return () => {
@@ -108,22 +112,37 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = checkoutOpen ? 'hidden' : '';
+    document.body.style.overflow = checkoutOpen || bookingConfirmed ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
-  }, [checkoutOpen]);
+  }, [checkoutOpen, bookingConfirmed]);
 
-  const openCheckout = () => {
+  const scrollToSection = (id: string) => {
     setMenuOpen(false);
-    setPaymentMessage('');
-    setCheckoutOpen(true);
+    const target = document.getElementById(id);
+    if (!target) return;
+    const header = document.querySelector<HTMLElement>('.df-header');
+    const marquee = document.querySelector<HTMLElement>('.df-marquee');
+    const offset = (header?.offsetHeight || 0) + (marquee?.offsetHeight || 0) + 12;
+    const top = target.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
   };
 
   const continueToPayment = () => {
-    if (bookingName.trim().length < 2 || !/^[6-9]\d{9}$/.test(bookingPhone.replace(/\D/g, '')) || !/^\S+@\S+\.\S+$/.test(bookingEmail.trim()) || !termsAccepted) {
-      setPaymentMessage('Complete your name, valid mobile number, email and consent before continuing.');
+    if (!termsAccepted) {
+      setPaymentMessage('Accept the Terms & Conditions and Privacy Policy before continuing.');
       return;
     }
-    setPaymentMessage('Payment preview ready. Connect an approved payment gateway before accepting live payments. No payment has been taken.');
+    setPaymentMessage('');
+    setCheckoutOpen(false);
+    setBookingConfirmed(true);
+  };
+
+  const verifyCoupon = () => {
+    if (!couponCode.trim()) {
+      setCouponMessage('Enter a coupon code to verify.');
+      return;
+    }
+    setCouponMessage('Coupon verification will activate with the payment gateway.');
   };
 
   const selectTheme = (nextTheme: ThemeId) => {
@@ -140,7 +159,6 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
       setPhoneVerified(false);
       setOtpMessage('');
     }
-    if (status !== 'idle') setStatus('idle');
   };
 
   const indianMobile = () => {
@@ -160,6 +178,18 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
     setOtpMessage(`Preview OTP: ${previewOtp}`);
   };
 
+  const changeNumber = () => {
+    setCheckoutOpen(false);
+    setPhoneVerified(false);
+    setOtpSent(false);
+    setOtp('');
+    setOtpMessage('');
+    window.requestAnimationFrame(() => {
+      document.querySelector('#register')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      window.setTimeout(() => document.querySelector<HTMLInputElement>('#mobile')?.focus(), 450);
+    });
+  };
+
   const updateOtp = (value: string) => {
     const nextOtp = value.replace(/\D/g, '').slice(0, 6);
     setOtp(nextOtp);
@@ -173,7 +203,7 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
     }
   };
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const nextErrors: FormErrors = {};
     if (form.name.trim().length < 2) nextErrors.name = 'Please enter your name.';
@@ -182,30 +212,22 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
     if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) nextErrors.email = 'Enter a valid email address.';
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
-    if (staticPreview) {
-      setStatus('success');
-      setForm(initialForm);
-      setOtpSent(false);
-      setOtp('');
-      setPhoneVerified(false);
-      return;
-    }
-    setStatus('submitting');
-    try {
-      const response = await fetch('/api/leads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, phoneVerified }) });
-      if (!response.ok) throw new Error('Submission failed');
-      setStatus('success'); setForm(initialForm); setOtpSent(false); setOtp(''); setPhoneVerified(false);
-    } catch { setStatus('error'); }
+    setBookingName(form.name.trim());
+    setBookingPhone(indianMobile());
+    setBookingEmail(form.email.trim());
+    setPaymentMessage('');
+    setCouponMessage('');
+    setCheckoutOpen(true);
   }
 
   return (
     <main className={`df-page ${themeOpen ? 'theme-preview-open' : ''}`} data-theme={theme} id="top">
       <a className="df-skip" href="#register">Skip to registration</a>
       <header className="df-header">
-        <a className="df-brand" href="#top" aria-label="Times Internet | Dandiya Festival home"><Image src="/images/times-internet.png" alt="Times Internet" width={116} height={34} /><i aria-hidden="true" /><span><strong>Dandiya <em>Festival</em></strong><small>Pune · Navratri 2026</small></span></a>
+        <a className="df-brand" href="#top" aria-label="Times Internet | Dandiya Festival home" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><Image src="/images/times-internet.png" alt="Times Internet" width={116} height={34} /><i aria-hidden="true" /><span><strong>Dandiya <em>Festival</em></strong><small>Pune · Navratri 2026</small></span></a>
         <button className={`df-menu-toggle ${menuOpen ? 'is-open' : ''}`} type="button" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}><span /><span /><span /></button>
-        <nav className={`df-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Primary navigation"><a href="#festival" onClick={() => setMenuOpen(false)}>Festival</a><a href="#lineup" onClick={() => setMenuOpen(false)}>Lineup</a><a href="#dates" onClick={() => setMenuOpen(false)}>Dates</a><a href="#venue" onClick={() => setMenuOpen(false)}>Venue</a><button type="button" onClick={openCheckout}>Book slots</button></nav>
-        <button className="df-btn df-btn-small df-header-cta" type="button" onClick={openCheckout}>Book your slots</button>
+        <nav className={`df-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Primary navigation"><a href="#festival" onClick={(event) => { event.preventDefault(); scrollToSection('festival'); }}>Festival</a><a href="#lineup" onClick={(event) => { event.preventDefault(); scrollToSection('lineup'); }}>Lineup</a><a href="#dates" onClick={(event) => { event.preventDefault(); scrollToSection('dates'); }}>Dates</a><a href="#venue" onClick={(event) => { event.preventDefault(); scrollToSection('venue'); }}>Venue</a><a href="#register" onClick={(event) => { event.preventDefault(); scrollToSection('register'); }}>Book slots</a></nav>
+        <a className="df-btn df-btn-small df-header-cta" href="#register" onClick={(event) => { event.preventDefault(); scrollToSection('register'); }}>Book your slots</a>
       </header>
 
       <section className="df-hero">
@@ -219,7 +241,7 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
             <div><span>Three festive nights</span><strong>17-19 October 2026</strong></div>
             <div><span>At the heart of Pune</span><strong>Phoenix Marketcity</strong><small>Viman Nagar, Pune</small></div>
           </div>
-          <div className="df-hero-actions"><button className="df-btn" type="button" onClick={openCheckout}>Book your slots now <span>↗</span></button><a className="df-text-link" href="#festival">Discover the festival <span>↓</span></a></div>
+          <div className="df-hero-actions"><a className="df-btn" href="#register" onClick={(event) => { event.preventDefault(); scrollToSection('register'); }}>Book your slots now <span>↗</span></a><a className="df-text-link" href="#festival" onClick={(event) => { event.preventDefault(); scrollToSection('festival'); }}>Discover the festival <span>↓</span></a></div>
         </div>
       </section>
 
@@ -247,7 +269,7 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
       <section className="df-dates" id="dates"><div className="df-dates-media"><Image src="/images/dates-night.jpg" alt="A glowing open-air Navratri festival venue at night" fill sizes="100vw" /></div><div className="df-dates-shade" aria-hidden="true" /><div className="df-wrap df-dates-content">
         <div className="df-dates-title df-reveal"><p className="df-eyebrow">Save the weekend</p><h2>17-19 <em>October</em></h2><p>2026 · Phoenix Marketcity, Pune</p></div>
         <div className="df-date-list df-reveal">{dates.map((item) => <article key={item.date}><span>{item.day}</span><strong>{item.date}</strong><div><h3>{item.note}</h3><p>Live Garba · Dandiya · DJ finale</p></div></article>)}</div>
-        <button className="df-btn df-dates-cta df-reveal" type="button" onClick={openCheckout}>Book your slots now <span>↗</span></button>
+        <a className="df-btn df-dates-cta df-reveal" href="#register" onClick={(event) => { event.preventDefault(); scrollToSection('register'); }}>Book your slots now <span>↗</span></a>
       </div></section>
 
       <section className="df-section df-schedule"><div className="df-wrap"><div className="df-section-head df-reveal"><div><p className="df-eyebrow">Evening programme</p><h2>From first step<br />to final beat.</h2></div><p>A clear view of how each festival night unfolds, from arrival and warm-up through the headline performances and DJ finale.</p></div><div className="df-timeline df-reveal">{schedule.map(([time, title, copy]) => <article key={time}><span>{time}</span><h3>{title}</h3><p>{copy}</p></article>)}</div></div></section>
@@ -257,45 +279,37 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
         <div className="df-venue-media df-reveal"><Image src="/images/phoenix-marketcity-evening.png" alt="Phoenix Marketcity entrance in Viman Nagar, Pune at blue hour" fill sizes="(max-width: 760px) 100vw, 52vw" /><div className="df-venue-facts"><span>350+ brands</span><span>Easy airport access</span><span>On-site parking</span></div></div>
       </div></section>
 
-      <section className="df-section df-ticket"><div className="df-wrap df-ticket-card df-reveal"><div><p className="df-eyebrow">Festival booking</p><h2>Your place<br />in the circle.</h2><p>Select your festival night, number of passes and preferred payment option through one focused booking flow.</p></div><div className="df-price"><span>Day pass preview</span><strong>₹999</strong><small>Per person. Taxes and final inclusions will be confirmed before live payment.</small><button className="df-btn" type="button" onClick={openCheckout}>Book your slots now</button></div></div></section>
+      <section className="df-section df-ticket"><div className="df-wrap df-ticket-card df-reveal"><div><p className="df-eyebrow">Festival booking</p><h2>Your place<br />in the circle.</h2><p>Select your festival night and number of passes through one focused booking flow.</p></div><div className="df-price"><span>Day pass preview</span><strong>₹999</strong><small>Per person. Taxes and final inclusions will be confirmed before live payment.</small><a className="df-btn" href="#register" onClick={(event) => { event.preventDefault(); scrollToSection('register'); }}>Book your slots now</a></div></div></section>
 
       <section className="df-section df-register" id="register"><div className="df-wrap df-register-grid">
         <div className="df-register-copy df-reveal"><p className="df-eyebrow">Join the celebration</p><h2>Be first<br /><em>to know.</em></h2><p>Tell us how you&apos;d like to attend. We&apos;ll keep you close to ticket releases and festival news.</p><div><span>3 nights</span><span>5,000+ expected</span><span>Pune</span></div></div>
         <form className="df-form df-reveal" onSubmit={handleSubmit} noValidate>
           <label className="df-field df-field-wide"><span>Full name <b>*</b></span><input value={form.name} onChange={(event) => updateField('name', event.target.value)} aria-invalid={Boolean(errors.name)} placeholder="Your name" autoComplete="name" />{errors.name && <small>{errors.name}</small>}</label>
-          <div className="df-field df-field-wide"><label htmlFor="mobile">Mobile number <b>*</b></label><div className="df-phone-row"><input id="mobile" type="tel" value={form.phone} onChange={(event) => updateField('phone', event.target.value)} aria-invalid={Boolean(errors.phone)} placeholder="98765 43210" autoComplete="tel" disabled={phoneVerified} /><button type="button" onClick={phoneVerified ? undefined : requestOtp}>{phoneVerified ? '✓ Verified' : otpSent ? 'Resend OTP' : 'Send OTP'}</button></div>{errors.phone && <small>{errors.phone}</small>}{otpSent && !phoneVerified && <div className="df-otp"><input aria-label="Six digit OTP" inputMode="numeric" autoComplete="one-time-code" value={otp} onChange={(event) => updateOtp(event.target.value)} placeholder="Enter 6-digit OTP" maxLength={6} /><span>{otpMessage}</span></div>}{phoneVerified && <span className="df-verified">Mobile number verified successfully.</span>}</div>
-          <label className="df-field"><span>Email <em>optional</em></span><input type="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} aria-invalid={Boolean(errors.email)} placeholder="you@example.com" autoComplete="email" />{errors.email && <small>{errors.email}</small>}</label>
-          <label className="df-field"><span>Preferred night <em>optional</em></span><select value={form.preferredDay} onChange={(event) => updateField('preferredDay', event.target.value)}><option value="">Choose a date</option><option>17 October</option><option>18 October</option><option>19 October</option><option>Flexible / all three</option></select></label>
-          <button className="df-btn df-form-submit" disabled={status === 'submitting' || !phoneVerified}>{status === 'submitting' ? 'Registering…' : phoneVerified ? 'Register my interest' : 'Verify mobile to continue'}</button><p className="df-form-note">{staticPreview ? 'Static preview only. Form data is not submitted.' : 'Preview OTP flow only. Connect an approved SMS provider before launch.'}</p><div className="df-form-status" aria-live="polite">{status === 'success' && <p>{staticPreview ? 'Preview complete. No data was submitted.' : 'Thank you. Your registration has been received.'}</p>}{status === 'error' && <p>We couldn&apos;t submit your details. Please try again.</p>}</div>
+          <div className="df-field df-field-wide"><label htmlFor="mobile">Mobile number <b>*</b></label><div className="df-phone-row"><input id="mobile" type="tel" value={form.phone} onChange={(event) => updateField('phone', event.target.value)} aria-invalid={Boolean(errors.phone)} placeholder="98765 43210" autoComplete="tel" disabled={phoneVerified} /><button type="button" onClick={phoneVerified ? changeNumber : requestOtp}>{phoneVerified ? 'Change number' : otpSent ? 'Resend OTP' : 'Send OTP'}</button></div>{errors.phone && <small>{errors.phone}</small>}{otpSent && !phoneVerified && <div className="df-otp"><input aria-label="Six digit OTP" inputMode="numeric" autoComplete="one-time-code" value={otp} onChange={(event) => updateOtp(event.target.value)} placeholder="Enter 6-digit OTP" maxLength={6} /><span>{otpMessage}</span></div>}{phoneVerified && <span className="df-verified">Mobile number verified.</span>}</div>
+          <label className="df-field df-field-wide"><span>Email <em>optional</em></span><input type="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} aria-invalid={Boolean(errors.email)} placeholder="you@example.com" autoComplete="email" />{errors.email && <small>{errors.email}</small>}</label>
+          <button className="df-btn df-form-submit">Book your slots</button><p className="df-form-note">Verify your mobile number once before continuing to booking.</p>
         </form>
       </div></section>
 
       <section className="df-section df-faq" id="faqs"><div className="df-wrap df-faq-grid"><div className="df-faq-head df-reveal"><p className="df-eyebrow">Plan with confidence</p><h2>Everything you need<br />before the first beat.</h2><p>Dates, passes, artist updates and practical details in one clear place.</p></div><div className="df-faq-list df-reveal">{faqs.map(([question, answer], index) => <details key={question} open={index === 0}><summary>{question}<span>+</span></summary><p>{answer}</p></details>)}</div></div></section>
 
-      <footer className="df-footer"><div className="df-wrap"><div className="df-footer-bottom"><div><span>Organised by</span><Image src="/images/times-internet.png" alt="Times Internet" width={174} height={50} /></div><nav><a href="#festival">Festival</a><a href="#lineup">Lineup</a><a href="#dates">Dates</a><a href="#venue">Venue</a><a href={staticPreview ? "#faqs" : "/privacy"}>Privacy Policy</a><a href={staticPreview ? "#faqs" : "/terms"}>Terms & Conditions</a></nav><p>© 2026 Times Internet<br />Details subject to final confirmation.</p></div></div></footer>
+      <footer className="df-footer"><div className="df-wrap"><div className="df-footer-cta"><a href="#top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><strong>Dandiya</strong> <em>Festival</em></a><button className="df-btn" type="button" onClick={() => scrollToSection('register')}>Book your slot <span aria-hidden="true">→</span></button></div><div className="df-footer-bottom"><div><span>Organised by</span><Image src="/images/times-internet.png" alt="Times Internet" width={174} height={50} /></div><nav><a href="#festival" onClick={(event) => { event.preventDefault(); scrollToSection('festival'); }}>Festival</a><a href="#lineup" onClick={(event) => { event.preventDefault(); scrollToSection('lineup'); }}>Lineup</a><a href="#dates" onClick={(event) => { event.preventDefault(); scrollToSection('dates'); }}>Dates</a><a href="#venue" onClick={(event) => { event.preventDefault(); scrollToSection('venue'); }}>Venue</a><a href={staticPreview ? "#faqs" : "/privacy"}>Privacy Policy</a><a href={staticPreview ? "#faqs" : "/terms"}>Terms & Conditions</a></nav><p>© 2026 Times Internet<br />Details subject to final confirmation.</p></div></div></footer>
       {checkoutOpen && <div className="df-checkout-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setCheckoutOpen(false); }}>
         <section className="df-checkout" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
-          <div className="df-checkout-head"><div><p className="df-eyebrow">Secure your festival night</p><h2 id="checkout-title">Book your slots</h2><p>Select your night, passes and payment preference.</p></div><button className="df-checkout-close" type="button" aria-label="Close booking" onClick={() => setCheckoutOpen(false)}>×</button></div>
+          <div className="df-checkout-head"><div><p className="df-eyebrow">Secure your festival night</p><h2 id="checkout-title">Book your slots</h2><p>Select your night and number of passes.</p></div><button className="df-checkout-close" type="button" aria-label="Close booking" onClick={() => setCheckoutOpen(false)}>×</button></div>
           <div className="df-booking-summary">
             <div className="df-booking-dates" aria-label="Select festival date">{dates.map((item) => <button className={bookingDate === `${item.date} October` ? 'is-selected' : ''} type="button" key={item.date} onClick={() => setBookingDate(`${item.date} October`)}><span>{item.day}</span><strong>{item.date}</strong><small>October</small></button>)}</div>
             <div className="df-ticket-stepper"><div><span>Day pass</span><small>₹{passPrice.toLocaleString('en-IN')} per person</small></div><div><button type="button" aria-label="Remove one pass" onClick={() => setTicketCount((count) => Math.max(1, count - 1))}>−</button><strong>{ticketCount}</strong><button type="button" aria-label="Add one pass" onClick={() => setTicketCount((count) => Math.min(10, count + 1))}>+</button></div></div>
             <div className="df-booking-total"><span>Booking total</span><strong>₹{(passPrice * ticketCount).toLocaleString('en-IN')}</strong><small>Taxes calculated by the payment provider</small></div>
           </div>
-          <div className="df-checkout-fields">
-            <label><span>Full name *</span><input value={bookingName} onChange={(event) => { setBookingName(event.target.value); setPaymentMessage(''); }} placeholder="Enter your full name" autoComplete="name" /></label>
-            <label><span>WhatsApp mobile number *</span><input type="tel" value={bookingPhone} onChange={(event) => { setBookingPhone(event.target.value.replace(/\D/g, '').slice(0, 10)); setPaymentMessage(''); }} placeholder="98765 43210" autoComplete="tel" /></label>
-            <label className="is-wide"><span>Email *</span><input type="email" value={bookingEmail} onChange={(event) => { setBookingEmail(event.target.value); setPaymentMessage(''); }} placeholder="name@example.com" autoComplete="email" /></label>
-          </div>
-          <fieldset className="df-payment-methods"><legend>Choose payment option</legend><div>
-            <button className={paymentMethod === 'upi' ? 'is-selected' : ''} type="button" onClick={() => setPaymentMethod('upi')}><i>UPI</i><span><strong>UPI</strong><small>Google Pay, PhonePe, Paytm</small></span></button>
-            <button className={paymentMethod === 'card' ? 'is-selected' : ''} type="button" onClick={() => setPaymentMethod('card')}><i>Card</i><span><strong>Credit or debit card</strong><small>Visa, Mastercard, RuPay</small></span></button>
-            <button className={paymentMethod === 'netbanking' ? 'is-selected' : ''} type="button" onClick={() => setPaymentMethod('netbanking')}><i>Bank</i><span><strong>Net banking</strong><small>All major Indian banks</small></span></button>
-          </div></fieldset>
+          <div className="df-booking-customer"><div><span>Booking for</span><strong>{bookingName}</strong><small>{bookingEmail || 'Email not provided'}</small></div><div><span>Verified mobile</span><strong>+91 {bookingPhone}</strong><button type="button" onClick={changeNumber}>Change number</button></div></div>
+          <div className="df-coupon"><label htmlFor="coupon-code">Coupon code</label><div><input id="coupon-code" value={couponCode} onChange={(event) => { setCouponCode(event.target.value.toUpperCase().replace(/\s/g, '')); setCouponMessage(''); }} placeholder="Enter coupon code" /><button type="button" onClick={verifyCoupon}>Verify coupon</button></div><small>{couponMessage}</small></div>
           <label className="df-booking-consent"><input type="checkbox" checked={termsAccepted} onChange={(event) => { setTermsAccepted(event.target.checked); setPaymentMessage(''); }} /><span>I agree to the <a href={staticPreview ? "#faqs" : "/terms"}>Terms & Conditions</a> and <a href={staticPreview ? "#faqs" : "/privacy"}>Privacy Policy</a>.</span></label>
-          <button className="df-btn df-payment-submit" type="button" onClick={continueToPayment}>Continue to secure payment</button>
-          <p className={`df-payment-message ${paymentMessage.startsWith('Payment preview') ? 'is-info' : ''}`} aria-live="polite">{paymentMessage || 'Payment processing will activate after an approved gateway is connected.'}</p>
+          <button className="df-btn df-payment-submit" type="button" onClick={continueToPayment}>Proceed to payment</button>
+          <p className={`df-payment-message ${paymentMessage.startsWith('Payment preview') ? 'is-info' : ''}`} aria-live="polite">{paymentMessage || 'Payment options will be shown by the connected payment gateway.'}</p>
         </section>
       </div>}
+      {bookingConfirmed && <div className="df-confirmation-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setBookingConfirmed(false); }}><section className="df-confirmation" role="dialog" aria-modal="true" aria-labelledby="confirmation-title"><button type="button" className="df-confirmation-close" aria-label="Close booking confirmation" onClick={() => setBookingConfirmed(false)}>×</button><div className="df-confirmation-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 12.5 3.1 3.1L17.5 8" /></svg></div><p className="df-eyebrow">Payment received</p><h2 id="confirmation-title">Booking confirmed</h2><p>Your booking is confirmed. A receipt and final entry details will be sent to your verified mobile number after the payment gateway callback.</p><dl><div><dt>Festival night</dt><dd>{bookingDate} 2026</dd></div><div><dt>Passes</dt><dd>{ticketCount}</dd></div><div><dt>Amount paid</dt><dd>₹{(passPrice * ticketCount).toLocaleString('en-IN')}</dd></div><div><dt>Mobile</dt><dd>+91 {bookingPhone}</dd></div></dl><button className="df-btn" type="button" onClick={() => { setBookingConfirmed(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Back to festival</button><small>Preview confirmation. The backend must trigger this state only after verified payment success.</small></section></div>}
       <div className="df-theme-preview">
         {themeOpen && <section className="df-theme-panel" id="theme-preview-panel" role="dialog" aria-label="Preview colour themes">
           <div className="df-theme-panel-head"><div><span>Stakeholder preview</span><h2>Colour themes</h2></div><button type="button" aria-label="Close theme preview" onClick={() => setThemeOpen(false)}>×</button></div>
@@ -307,7 +321,9 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
         </section>}
         <button className="df-theme-toggle" type="button" aria-label={themeOpen ? 'Close colour theme preview' : 'Open colour theme preview'} aria-expanded={themeOpen} aria-controls="theme-preview-panel" onClick={() => setThemeOpen((open) => !open)}><span aria-hidden="true" /></button>
       </div>
-      <div className={`df-mobile-cta ${showMobileCta ? 'is-visible' : ''}`}><button className="df-btn" type="button" onClick={openCheckout}>Book your slots now</button></div>
+      <a className="df-whatsapp" href="https://wa.me/917718097101" target="_blank" rel="noreferrer" aria-label="Contact us on WhatsApp"><svg viewBox="0 0 16 16" aria-hidden="true"><path style={{ fill: '#fff', stroke: 'none' }} d="M13.601 2.326A7.854 7.854 0 0 0 1.735 12.51L.625 16.556l4.158-1.09a7.845 7.845 0 0 0 3.803.98h.003c4.338 0 7.856-3.522 7.856-7.856 0-2.099-.82-4.075-2.307-5.562l-.537-.702Zm-5.01 12.785a6.548 6.548 0 0 1-3.334-.909l-.238-.141-2.467.647.659-2.407-.156-.247a6.539 6.539 0 0 1-1.007-3.505c0-3.607 2.938-6.545 6.55-6.545a6.504 6.504 0 0 1 4.642 1.928 6.5 6.5 0 0 1 1.918 4.66c-.003 3.61-2.944 6.52-6.567 6.52Zm3.588-4.895c-.197-.098-1.165-.575-1.345-.64-.18-.065-.311-.098-.442.098-.131.197-.508.64-.623.771-.114.131-.229.148-.426.05-.197-.099-.832-.307-1.584-.98-.586-.522-.98-1.167-1.094-1.364-.114-.197-.012-.303.086-.401.088-.088.197-.23.295-.344.098-.115.131-.197.197-.328.065-.131.033-.246-.016-.344-.05-.099-.443-1.067-.607-1.462-.16-.385-.323-.332-.443-.338l-.377-.007a.724.724 0 0 0-.525.246c-.18.197-.689.673-.689 1.64 0 .968.705 1.902.803 2.034.098.131 1.387 2.116 3.36 2.968.47.202.836.323 1.12.413.471.15.9.129 1.238.078.378-.057 1.166-.476 1.33-.935.164-.459.164-.852.115-.935-.05-.082-.18-.131-.377-.23Z" /></svg></a>
+      <button className={`df-back-top ${showScrollTop ? 'is-visible' : ''}`} type="button" aria-label="Scroll back to top" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 14 6-6 6 6" /></svg></button>
+      <div className={`df-mobile-cta ${showMobileCta ? 'is-visible' : ''}`}><button className="df-btn" type="button" onClick={() => scrollToSection('register')}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v3a3 3 0 0 0 0 6v3a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18v-3a3 3 0 0 0 0-6V6A1.5 1.5 0 0 1 5 4.5Z" /><path d="M12 7.5v9" /></svg><span>Book your slots</span></button></div>
     </main>
   );
 }

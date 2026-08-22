@@ -400,6 +400,11 @@ h1 { max-width: 700px; margin: 0; font-family: Georgia, "Times New Roman", serif
 .df-faq-list details > p { max-width: 700px; margin: -2px 40px 26px 0; color: var(--df-muted); font-size: 13px; line-height: 1.65; }
 
 .df-footer { padding: 100px 0 28px; background: #2d2228; color: white; }
+.df-footer-cta { display: flex; align-items: center; justify-content: space-between; gap: 30px; margin-bottom: 28px; padding: 18px 22px; border: 1px solid rgba(255,255,255,.14); border-radius: 16px; background: color-mix(in srgb, var(--df-peacock) 28%, var(--df-deep)); }
+.df-footer-cta > a { color: white; font-family: var(--df-serif); font-size: clamp(1.35rem, 2.2vw, 2rem); line-height: 1; }
+.df-footer-cta > a strong { font-weight: 650; }
+.df-footer-cta > a em { color: var(--df-highlight); font-weight: 500; }
+.df-footer-cta .df-btn { min-height: 46px; padding: 0 22px; white-space: nowrap; }
 .df-footer-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; padding-bottom: 75px; }
 .df-footer-top p { margin: 0 0 22px; color: #ffd18a; font-size: .78rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
 .df-footer h2 em { color: #ffd18a; }
@@ -1679,6 +1684,254 @@ h1 { font-weight: 590; letter-spacing: -.065em; }
   .df-payment-methods button { min-height: 61px; }
   .df-mobile-cta { padding: 6px; }
   .df-mobile-cta .df-btn { width: 100%; min-height: 44px; justify-content: center; font-size: 12px; }
+}
+
+/* Compact checkout composition */
+@media (min-width: 681px) {
+  .df-checkout-backdrop { padding: 22px; }
+  .df-checkout {
+    width: min(720px, 100%);
+    padding: 26px 28px;
+    border-radius: 22px;
+  }
+  .df-checkout-head { margin-bottom: 18px; }
+  .df-checkout-head .df-eyebrow { margin-bottom: 7px; font-size: 9px; }
+  .df-checkout-head h2 { font-size: clamp(2.35rem, 4vw, 3.1rem); }
+  .df-checkout-head p:last-child { margin-top: 8px; font-size: 12px; }
+  .df-checkout-close { width: 38px; height: 38px; font-size: 22px; }
+  .df-booking-summary {
+    grid-template-areas:
+      "dates stepper"
+      "dates total";
+    grid-template-columns: minmax(0, 1.45fr) minmax(190px, .55fr);
+    gap: 0 18px;
+    padding: 16px;
+    border-radius: 16px;
+  }
+  .df-booking-dates { grid-area: dates; gap: 7px; }
+  .df-booking-dates button { min-height: 104px; padding: 12px; border-radius: 11px; }
+  .df-booking-dates strong { margin-top: 6px; font-size: 1.85rem; }
+  .df-ticket-stepper { grid-area: stepper; padding: 7px 0 12px; }
+  .df-ticket-stepper > div:first-child span { font-size: 1.05rem; }
+  .df-ticket-stepper button { width: 30px; height: 30px; }
+  .df-booking-total { grid-area: total; padding-top: 12px; }
+  .df-booking-total strong { font-size: 1.75rem; }
+  .df-checkout-fields { gap: 11px; margin-top: 16px; }
+  .df-checkout-fields label { gap: 6px; }
+  .df-checkout-fields input { min-height: 44px; padding-inline: 13px; border-radius: 9px; font-size: 13px; }
+  .df-payment-methods { margin-top: 15px; }
+  .df-payment-methods legend { margin-bottom: 7px; }
+  .df-payment-methods > div { gap: 8px; }
+  .df-payment-methods button { min-height: 58px; gap: 8px; padding: 9px; border-radius: 10px; }
+  .df-payment-methods i { min-width: 34px; height: 34px; border-radius: 8px; font-size: 8px; }
+  .df-payment-methods strong { font-size: 10px; }
+  .df-payment-methods small { font-size: 8px; }
+  .df-booking-consent { margin: 14px 0; font-size: 10px; }
+  .df-payment-submit { min-height: 44px; }
+  .df-payment-message { margin-top: 8px; }
+}
+
+/* Final compact booking step */
+.df-booking-customer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 13px;
+}
+
+.df-booking-customer > div {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--df-line);
+  border-radius: 10px;
+  background: var(--df-ivory);
+}
+
+.df-booking-customer span,
+.df-coupon > label {
+  color: var(--df-muted);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.df-booking-customer strong { font-size: 12px; }
+.df-booking-customer small { overflow: hidden; color: var(--df-muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.df-booking-customer button { justify-self: start; padding: 0; border: 0; background: transparent; color: var(--df-peacock); font-size: 9px; font-weight: 800; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+
+.df-coupon { display: grid; gap: 6px; margin-top: 13px; }
+.df-coupon > div { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.df-coupon input { min-width: 0; min-height: 40px; padding: 0 12px; border: 1px solid var(--df-line); border-radius: 9px; background: var(--df-ivory); color: var(--df-ink); font: inherit; font-size: 12px; outline: 0; }
+.df-coupon input:focus { border-color: var(--df-peacock); }
+.df-coupon button { min-height: 40px; padding: 0 15px; border: 1px solid var(--df-peacock); border-radius: 9px; background: color-mix(in srgb, var(--df-peacock) 8%, var(--df-paper)); color: var(--df-peacock); font-size: 10px; font-weight: 800; cursor: pointer; }
+.df-coupon > small { min-height: 12px; color: var(--df-muted); font-size: 9px; }
+
+.df-whatsapp {
+  position: fixed;
+  z-index: 68;
+  right: 88px;
+  bottom: 23px;
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.78);
+  border-radius: 50%;
+  background: #1f9d58;
+  color: white;
+  box-shadow: 0 12px 30px rgba(17, 77, 43, .28);
+}
+
+.df-whatsapp svg { width: 27px; height: 27px; fill: #fff; }
+.df-whatsapp:hover { transform: translateY(-2px); }
+
+.df-back-top {
+  position: fixed;
+  z-index: 68;
+  right: auto;
+  bottom: 23px;
+  left: 22px;
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--df-line);
+  border-radius: 50%;
+  background: var(--df-paper);
+  color: var(--df-ink);
+  box-shadow: 0 12px 30px rgba(36,20,28,.18);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition: opacity .2s ease, transform .2s ease, visibility .2s;
+  cursor: pointer;
+}
+
+.df-back-top.is-visible { opacity: 1; visibility: visible; transform: none; }
+.df-back-top svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.df-back-top:hover { color: var(--df-rani); transform: translateY(-2px); }
+
+.df-confirmation-backdrop {
+  position: fixed;
+  z-index: 230;
+  inset: 0;
+  display: grid;
+  overflow-y: auto;
+  place-items: center;
+  padding: 20px;
+  background: rgba(18, 12, 18, .78);
+  backdrop-filter: blur(12px);
+}
+
+.df-confirmation {
+  position: relative;
+  width: min(480px, 100%);
+  padding: 32px;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 22px;
+  background: var(--df-deep-card);
+  color: white;
+  box-shadow: 0 35px 100px rgba(15, 8, 13, .42);
+  text-align: center;
+}
+
+.df-confirmation-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  padding: 0 0 2px;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 50%;
+  background: rgba(255,255,255,.08);
+  color: white;
+  font-size: 21px;
+  cursor: pointer;
+}
+
+.df-confirmation-mark { display: grid; width: 52px; height: 52px; margin: 0 auto 16px; place-items: center; border-radius: 50%; background: var(--df-marigold); color: var(--df-button-ink); }
+.df-confirmation-mark svg { width: 29px; height: 29px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.df-confirmation .df-eyebrow { margin-bottom: 9px; color: var(--df-highlight); }
+.df-confirmation h2 { margin: 0; font-family: var(--df-serif); font-size: 2.35rem; line-height: 1; }
+.df-confirmation > p:not(.df-eyebrow) { max-width: 390px; margin: 15px auto 20px; color: rgba(255,255,255,.72); font-size: 12px; line-height: 1.55; }
+.df-confirmation dl { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; overflow: hidden; margin: 0 0 20px; border: 1px solid rgba(255,255,255,.16); border-radius: 13px; background: rgba(255,255,255,.16); text-align: left; }
+.df-confirmation dl > div { padding: 11px 13px; background: var(--df-deep-card); }
+.df-confirmation dt { color: rgba(255,255,255,.5); font-size: 8px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
+.df-confirmation dd { margin: 4px 0 0; font-size: 12px; font-weight: 700; }
+.df-confirmation > .df-btn { width: 100%; justify-content: center; }
+.df-confirmation > small { display: block; margin-top: 12px; color: rgba(255,255,255,.44); font-size: 8px; line-height: 1.45; }
+
+@media (min-width: 681px) {
+  .df-checkout {
+    width: min(600px, 100%);
+    padding: 20px 22px;
+    border-radius: 18px;
+  }
+  .df-checkout-head { margin-bottom: 13px; }
+  .df-checkout-head h2 { font-size: 2.45rem; }
+  .df-checkout-head p:last-child { margin-top: 5px; font-size: 11px; }
+  .df-booking-summary {
+    grid-template-columns: minmax(0, 1.35fr) minmax(170px, .65fr);
+    gap: 0 13px;
+    padding: 12px;
+  }
+  .df-booking-dates button { min-height: 88px; padding: 9px; }
+  .df-booking-dates strong { font-size: 1.55rem; }
+  .df-ticket-stepper { padding: 4px 0 8px; }
+  .df-ticket-stepper > div:first-child span { font-size: .95rem; white-space: nowrap; }
+  .df-booking-total { padding-top: 8px; }
+  .df-booking-total strong { font-size: 1.55rem; }
+  .df-booking-consent { margin: 11px 0; }
+  .df-payment-submit { min-height: 41px; }
+}
+
+@media (max-width: 680px) {
+  .df-booking-customer { grid-template-columns: 1fr; }
+  .df-mobile-cta {
+    right: auto;
+    bottom: 12px;
+    left: 50%;
+    width: auto;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    transform: translate(-50%, 18px);
+  }
+  .df-page .df-mobile-cta { border: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
+  .df-mobile-cta.is-visible { transform: translate(-50%, 0); }
+  .df-mobile-cta .df-btn {
+    width: auto;
+    min-width: 190px;
+    min-height: 48px;
+    gap: 9px;
+    padding: 0 22px;
+    border: 1px solid rgba(255,255,255,.5);
+    border-radius: 999px;
+    box-shadow: 0 12px 30px rgba(37,10,22,.24);
+    font-size: 12px;
+  }
+  .df-mobile-cta .df-btn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .df-mobile-cta .df-btn span { color: inherit; font-size: inherit; letter-spacing: 0; text-transform: none; }
+  .df-whatsapp { right: 14px; bottom: 132px; width: 46px; height: 46px; border: 2px solid #fff; background: #25d366; box-shadow: 0 8px 22px rgba(20, 118, 66, .22); }
+  .df-back-top { right: auto; bottom: 78px; left: 14px; width: 38px; height: 38px; border-color: rgba(42,29,36,.18); background: color-mix(in srgb, var(--df-paper) 82%, transparent); color: var(--df-muted); box-shadow: 0 5px 14px rgba(36,20,28,.1); backdrop-filter: blur(10px); }
+  .df-back-top svg { width: 18px; height: 18px; stroke-width: 1.7; }
+  .df-confirmation { padding: 28px 20px 22px; border-radius: 19px; }
+  .df-confirmation h2 { font-size: 2rem; }
+}
+
+@media (max-width: 680px) {
+  .df-footer-cta { align-items: center; margin-bottom: 24px; padding: 14px 15px; border-radius: 13px; }
+  .df-footer-cta > a { font-size: 1.2rem; }
+  .df-footer-cta .df-btn { min-height: 42px; padding: 0 16px; font-size: 10px; }
 }
 
 @media (max-width: 680px) {
