@@ -7,8 +7,10 @@ import type { FormEvent } from 'react';
 type LeadForm = { name: string; phone: string; email: string; preferredDay: string };
 type FormErrors = Partial<Record<keyof LeadForm, string>>;
 type ThemeId = 'marigold' | 'peacock' | 'bandhani' | 'gulabi' | 'kesari' | 'indigo' | 'emerald' | 'noir';
+type PaymentMethod = 'upi' | 'card' | 'netbanking';
 const initialForm: LeadForm = { name: '', phone: '', email: '', preferredDay: '' };
 const previewOtp = '246810';
+const passPrice = 999;
 
 const themes: Array<{ id: ThemeId; name: string; description: string }> = [
   { id: 'marigold', name: 'Marigold Circle', description: 'Warm ivory · rani pink · marigold' },
@@ -68,6 +70,15 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
   const [otpMessage, setOtpMessage] = useState('');
   const [theme, setTheme] = useState<ThemeId>('marigold');
   const [themeOpen, setThemeOpen] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [bookingDate, setBookingDate] = useState('17 October');
+  const [ticketCount, setTicketCount] = useState(1);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('upi');
+  const [bookingName, setBookingName] = useState('');
+  const [bookingPhone, setBookingPhone] = useState('');
+  const [bookingEmail, setBookingEmail] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [paymentMessage, setPaymentMessage] = useState('');
 
   useEffect(() => {
     const elements = document.querySelectorAll<HTMLElement>('.df-reveal');
@@ -83,13 +94,37 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem('dandiya-preview-theme');
-    if (themes.some((item) => item.id === savedTheme)) setTheme(savedTheme as ThemeId);
+    const restoreTheme = window.requestAnimationFrame(() => {
+      if (themes.some((item) => item.id === savedTheme)) setTheme(savedTheme as ThemeId);
+    });
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setThemeOpen(false);
+      if (event.key === 'Escape') { setThemeOpen(false); setCheckoutOpen(false); }
     };
     document.addEventListener('keydown', closeOnEscape);
-    return () => document.removeEventListener('keydown', closeOnEscape);
+    return () => {
+      window.cancelAnimationFrame(restoreTheme);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
   }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = checkoutOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [checkoutOpen]);
+
+  const openCheckout = () => {
+    setMenuOpen(false);
+    setPaymentMessage('');
+    setCheckoutOpen(true);
+  };
+
+  const continueToPayment = () => {
+    if (bookingName.trim().length < 2 || !/^[6-9]\d{9}$/.test(bookingPhone.replace(/\D/g, '')) || !/^\S+@\S+\.\S+$/.test(bookingEmail.trim()) || !termsAccepted) {
+      setPaymentMessage('Complete your name, valid mobile number, email and consent before continuing.');
+      return;
+    }
+    setPaymentMessage('Payment preview ready. Connect an approved payment gateway before accepting live payments. No payment has been taken.');
+  };
 
   const selectTheme = (nextTheme: ThemeId) => {
     setTheme(nextTheme);
@@ -167,10 +202,10 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
     <main className={`df-page ${themeOpen ? 'theme-preview-open' : ''}`} data-theme={theme} id="top">
       <a className="df-skip" href="#register">Skip to registration</a>
       <header className="df-header">
-        <a className="df-brand" href="#top" aria-label="Times Internet | Dandiya Festival home"><Image src="/images/times-internet.png" alt="Times Internet" width={116} height={34} /><i aria-hidden="true" /><strong>Dandiya Festival</strong></a>
+        <a className="df-brand" href="#top" aria-label="Times Internet | Dandiya Festival home"><Image src="/images/times-internet.png" alt="Times Internet" width={116} height={34} /><i aria-hidden="true" /><span><strong>Dandiya <em>Festival</em></strong><small>Pune · Navratri 2026</small></span></a>
         <button className={`df-menu-toggle ${menuOpen ? 'is-open' : ''}`} type="button" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}><span /><span /><span /></button>
-        <nav className={`df-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Primary navigation"><a href="#festival" onClick={() => setMenuOpen(false)}>Festival</a><a href="#lineup" onClick={() => setMenuOpen(false)}>Lineup</a><a href="#dates" onClick={() => setMenuOpen(false)}>Dates</a><a href="#venue" onClick={() => setMenuOpen(false)}>Venue</a><a href="#register" onClick={() => setMenuOpen(false)}>Register</a></nav>
-        <a className="df-btn df-btn-small df-header-cta" href="#register">Book passes</a>
+        <nav className={`df-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Primary navigation"><a href="#festival" onClick={() => setMenuOpen(false)}>Festival</a><a href="#lineup" onClick={() => setMenuOpen(false)}>Lineup</a><a href="#dates" onClick={() => setMenuOpen(false)}>Dates</a><a href="#venue" onClick={() => setMenuOpen(false)}>Venue</a><button type="button" onClick={openCheckout}>Book slots</button></nav>
+        <button className="df-btn df-btn-small df-header-cta" type="button" onClick={openCheckout}>Book your slots</button>
       </header>
 
       <section className="df-hero">
@@ -184,7 +219,7 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
             <div><span>Three festive nights</span><strong>17-19 October 2026</strong></div>
             <div><span>At the heart of Pune</span><strong>Phoenix Marketcity</strong><small>Viman Nagar, Pune</small></div>
           </div>
-          <div className="df-hero-actions"><a className="df-btn" href="#register">Reserve your passes <span>↗</span></a><a className="df-text-link" href="#festival">Discover the festival <span>↓</span></a></div>
+          <div className="df-hero-actions"><button className="df-btn" type="button" onClick={openCheckout}>Book your slots now <span>↗</span></button><a className="df-text-link" href="#festival">Discover the festival <span>↓</span></a></div>
         </div>
       </section>
 
@@ -212,7 +247,7 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
       <section className="df-dates" id="dates"><div className="df-dates-media"><Image src="/images/dates-night.jpg" alt="A glowing open-air Navratri festival venue at night" fill sizes="100vw" /></div><div className="df-dates-shade" aria-hidden="true" /><div className="df-wrap df-dates-content">
         <div className="df-dates-title df-reveal"><p className="df-eyebrow">Save the weekend</p><h2>17-19 <em>October</em></h2><p>2026 · Phoenix Marketcity, Pune</p></div>
         <div className="df-date-list df-reveal">{dates.map((item) => <article key={item.date}><span>{item.day}</span><strong>{item.date}</strong><div><h3>{item.note}</h3><p>Live Garba · Dandiya · DJ finale</p></div></article>)}</div>
-        <a className="df-btn df-dates-cta df-reveal" href="#register">Reserve your nights <span>↗</span></a>
+        <button className="df-btn df-dates-cta df-reveal" type="button" onClick={openCheckout}>Book your slots now <span>↗</span></button>
       </div></section>
 
       <section className="df-section df-schedule"><div className="df-wrap"><div className="df-section-head df-reveal"><div><p className="df-eyebrow">Evening programme</p><h2>From first step<br />to final beat.</h2></div><p>A clear view of how each festival night unfolds, from arrival and warm-up through the headline performances and DJ finale.</p></div><div className="df-timeline df-reveal">{schedule.map(([time, title, copy]) => <article key={time}><span>{time}</span><h3>{title}</h3><p>{copy}</p></article>)}</div></div></section>
@@ -222,7 +257,7 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
         <div className="df-venue-media df-reveal"><Image src="/images/phoenix-marketcity-evening.png" alt="Phoenix Marketcity entrance in Viman Nagar, Pune at blue hour" fill sizes="(max-width: 760px) 100vw, 52vw" /><div className="df-venue-facts"><span>350+ brands</span><span>Easy airport access</span><span>On-site parking</span></div></div>
       </div></section>
 
-      <section className="df-section df-ticket"><div className="df-wrap df-ticket-card df-reveal"><div><p className="df-eyebrow">Ticketing preview</p><h2>Your place<br />in the circle.</h2><p>Register now for first access to pass categories, artist updates and booking announcements.</p></div><div className="df-price"><span>Average ticket price</span><strong>₹999</strong><small>Final categories and inclusions to be announced.</small><a className="df-btn" href="#register">Get first access</a></div></div></section>
+      <section className="df-section df-ticket"><div className="df-wrap df-ticket-card df-reveal"><div><p className="df-eyebrow">Festival booking</p><h2>Your place<br />in the circle.</h2><p>Select your festival night, number of passes and preferred payment option through one focused booking flow.</p></div><div className="df-price"><span>Day pass preview</span><strong>₹999</strong><small>Per person. Taxes and final inclusions will be confirmed before live payment.</small><button className="df-btn" type="button" onClick={openCheckout}>Book your slots now</button></div></div></section>
 
       <section className="df-section df-register" id="register"><div className="df-wrap df-register-grid">
         <div className="df-register-copy df-reveal"><p className="df-eyebrow">Join the celebration</p><h2>Be first<br /><em>to know.</em></h2><p>Tell us how you&apos;d like to attend. We&apos;ll keep you close to ticket releases and festival news.</p><div><span>3 nights</span><span>5,000+ expected</span><span>Pune</span></div></div>
@@ -238,6 +273,29 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
       <section className="df-section df-faq" id="faqs"><div className="df-wrap df-faq-grid"><div className="df-faq-head df-reveal"><p className="df-eyebrow">Plan with confidence</p><h2>Everything you need<br />before the first beat.</h2><p>Dates, passes, artist updates and practical details in one clear place.</p></div><div className="df-faq-list df-reveal">{faqs.map(([question, answer], index) => <details key={question} open={index === 0}><summary>{question}<span>+</span></summary><p>{answer}</p></details>)}</div></div></section>
 
       <footer className="df-footer"><div className="df-wrap"><div className="df-footer-bottom"><div><span>Organised by</span><Image src="/images/times-internet.png" alt="Times Internet" width={174} height={50} /></div><nav><a href="#festival">Festival</a><a href="#lineup">Lineup</a><a href="#dates">Dates</a><a href="#venue">Venue</a><a href={staticPreview ? "#faqs" : "/privacy"}>Privacy Policy</a><a href={staticPreview ? "#faqs" : "/terms"}>Terms & Conditions</a></nav><p>© 2026 Times Internet<br />Details subject to final confirmation.</p></div></div></footer>
+      {checkoutOpen && <div className="df-checkout-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setCheckoutOpen(false); }}>
+        <section className="df-checkout" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
+          <div className="df-checkout-head"><div><p className="df-eyebrow">Secure your festival night</p><h2 id="checkout-title">Book your slots</h2><p>Select your night, passes and payment preference.</p></div><button className="df-checkout-close" type="button" aria-label="Close booking" onClick={() => setCheckoutOpen(false)}>×</button></div>
+          <div className="df-booking-summary">
+            <div className="df-booking-dates" aria-label="Select festival date">{dates.map((item) => <button className={bookingDate === `${item.date} October` ? 'is-selected' : ''} type="button" key={item.date} onClick={() => setBookingDate(`${item.date} October`)}><span>{item.day}</span><strong>{item.date}</strong><small>October</small></button>)}</div>
+            <div className="df-ticket-stepper"><div><span>Day pass</span><small>₹{passPrice.toLocaleString('en-IN')} per person</small></div><div><button type="button" aria-label="Remove one pass" onClick={() => setTicketCount((count) => Math.max(1, count - 1))}>−</button><strong>{ticketCount}</strong><button type="button" aria-label="Add one pass" onClick={() => setTicketCount((count) => Math.min(10, count + 1))}>+</button></div></div>
+            <div className="df-booking-total"><span>Booking total</span><strong>₹{(passPrice * ticketCount).toLocaleString('en-IN')}</strong><small>Taxes calculated by the payment provider</small></div>
+          </div>
+          <div className="df-checkout-fields">
+            <label><span>Full name *</span><input value={bookingName} onChange={(event) => { setBookingName(event.target.value); setPaymentMessage(''); }} placeholder="Enter your full name" autoComplete="name" /></label>
+            <label><span>WhatsApp mobile number *</span><input type="tel" value={bookingPhone} onChange={(event) => { setBookingPhone(event.target.value.replace(/\D/g, '').slice(0, 10)); setPaymentMessage(''); }} placeholder="98765 43210" autoComplete="tel" /></label>
+            <label className="is-wide"><span>Email *</span><input type="email" value={bookingEmail} onChange={(event) => { setBookingEmail(event.target.value); setPaymentMessage(''); }} placeholder="name@example.com" autoComplete="email" /></label>
+          </div>
+          <fieldset className="df-payment-methods"><legend>Choose payment option</legend><div>
+            <button className={paymentMethod === 'upi' ? 'is-selected' : ''} type="button" onClick={() => setPaymentMethod('upi')}><i>UPI</i><span><strong>UPI</strong><small>Google Pay, PhonePe, Paytm</small></span></button>
+            <button className={paymentMethod === 'card' ? 'is-selected' : ''} type="button" onClick={() => setPaymentMethod('card')}><i>Card</i><span><strong>Credit or debit card</strong><small>Visa, Mastercard, RuPay</small></span></button>
+            <button className={paymentMethod === 'netbanking' ? 'is-selected' : ''} type="button" onClick={() => setPaymentMethod('netbanking')}><i>Bank</i><span><strong>Net banking</strong><small>All major Indian banks</small></span></button>
+          </div></fieldset>
+          <label className="df-booking-consent"><input type="checkbox" checked={termsAccepted} onChange={(event) => { setTermsAccepted(event.target.checked); setPaymentMessage(''); }} /><span>I agree to the <a href={staticPreview ? "#faqs" : "/terms"}>Terms & Conditions</a> and <a href={staticPreview ? "#faqs" : "/privacy"}>Privacy Policy</a>.</span></label>
+          <button className="df-btn df-payment-submit" type="button" onClick={continueToPayment}>Continue to secure payment</button>
+          <p className={`df-payment-message ${paymentMessage.startsWith('Payment preview') ? 'is-info' : ''}`} aria-live="polite">{paymentMessage || 'Payment processing will activate after an approved gateway is connected.'}</p>
+        </section>
+      </div>}
       <div className="df-theme-preview">
         {themeOpen && <section className="df-theme-panel" id="theme-preview-panel" role="dialog" aria-label="Preview colour themes">
           <div className="df-theme-panel-head"><div><span>Stakeholder preview</span><h2>Colour themes</h2></div><button type="button" aria-label="Close theme preview" onClick={() => setThemeOpen(false)}>×</button></div>
@@ -249,7 +307,7 @@ export default function Home({ staticPreview = false }: { staticPreview?: boolea
         </section>}
         <button className="df-theme-toggle" type="button" aria-label={themeOpen ? 'Close colour theme preview' : 'Open colour theme preview'} aria-expanded={themeOpen} aria-controls="theme-preview-panel" onClick={() => setThemeOpen((open) => !open)}><span aria-hidden="true" /></button>
       </div>
-      <div className={`df-mobile-cta ${showMobileCta ? 'is-visible' : ''}`}><div><span>Average ticket</span><strong>₹999</strong></div><a className="df-btn" href="#register">Register</a></div>
+      <div className={`df-mobile-cta ${showMobileCta ? 'is-visible' : ''}`}><button className="df-btn" type="button" onClick={openCheckout}>Book your slots now</button></div>
     </main>
   );
 }
