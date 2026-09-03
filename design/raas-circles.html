@@ -1,0 +1,573 @@
+<title>Raas Circles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#170b10;
+    --bg-panel:#241017;
+    --bg-elevated:#2c1620;
+    --ink:#fbf3e7;
+    --ink-soft:#cbb6a8;
+    --ink-faint:#8d7369;
+    --line:rgba(251,243,231,0.14);
+    --line-strong:rgba(251,243,231,0.26);
+    --accent:#f0ab3a;
+    --accent-soft:#f7c877;
+    --accent-ink:#2c1608;
+    --rose:#d0507a;
+    --silver:#c3ae8b;
+    --teal:#3aa89b;
+    --copper:#d17f42;
+    --amber:#e2932f;
+    --shadow:rgba(8,3,5,0.55);
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f8f0e3;
+      --bg-panel:#fffaf1;
+      --bg-elevated:#ffffff;
+      --ink:#2a1219;
+      --ink-soft:#6b4c47;
+      --ink-faint:#9c8178;
+      --line:rgba(42,18,25,0.14);
+      --line-strong:rgba(42,18,25,0.24);
+      --accent:#c9791a;
+      --accent-soft:#e3a13c;
+      --accent-ink:#fffaf1;
+      --rose:#a23f63;
+      --silver:#8a7355;
+      --teal:#146b62;
+      --copper:#a2551f;
+      --amber:#b8650f;
+      --shadow:rgba(60,40,20,0.16);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f8f0e3;
+    --bg-panel:#fffaf1;
+    --bg-elevated:#ffffff;
+    --ink:#2a1219;
+    --ink-soft:#6b4c47;
+    --ink-faint:#9c8178;
+    --line:rgba(42,18,25,0.14);
+    --line-strong:rgba(42,18,25,0.24);
+    --accent:#c9791a;
+    --accent-soft:#e3a13c;
+    --accent-ink:#fffaf1;
+    --rose:#a23f63;
+    --silver:#8a7355;
+    --teal:#146b62;
+    --copper:#a2551f;
+    --amber:#b8650f;
+    --shadow:rgba(60,40,20,0.16);
+  }
+  :root[data-theme="dark"]{
+    --bg:#170b10;
+    --bg-panel:#241017;
+    --bg-elevated:#2c1620;
+    --ink:#fbf3e7;
+    --ink-soft:#cbb6a8;
+    --ink-faint:#8d7369;
+    --line:rgba(251,243,231,0.14);
+    --line-strong:rgba(251,243,231,0.26);
+    --accent:#f0ab3a;
+    --accent-soft:#f7c877;
+    --accent-ink:#2c1608;
+    --rose:#d0507a;
+    --silver:#c3ae8b;
+    --teal:#3aa89b;
+    --copper:#d17f42;
+    --amber:#e2932f;
+    --shadow:rgba(8,3,5,0.55);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',ui-sans-serif,system-ui,-apple-system,sans-serif;
+    padding:clamp(20px,4vw,56px) clamp(16px,5vw,64px) 64px;
+    line-height:1.5;
+  }
+  h1,h2,h3{font-family:'Cormorant SC','Georgia','Times New Roman',serif; font-weight:600; margin:0; text-wrap:balance;}
+  .num{font-variant-numeric:tabular-nums;}
+  a{color:inherit;}
+
+  /* ---------- header ---------- */
+  .venue-header{max-width:920px; margin:0 auto 40px;}
+  .eyebrow{
+    font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--accent-soft); font-weight:600; margin:0 0 14px;
+  }
+  .venue-header h1{font-size:clamp(2.1rem,4.6vw,3.2rem); letter-spacing:0.01em;}
+  .venue-header p{color:var(--ink-soft); max-width:56ch; font-size:1.02rem; margin:14px 0 0;}
+
+  /* ---------- console grid ---------- */
+  .console{
+    max-width:1180px; margin:0 auto;
+    display:grid; grid-template-columns:1.55fr 1fr; gap:28px; align-items:start;
+  }
+  @media (max-width:900px){ .console{grid-template-columns:1fr;} }
+
+  /* ---------- map ---------- */
+  .mapcard{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:14px;
+    box-shadow:0 20px 50px -30px var(--shadow);
+  }
+  .mapwrap{position:relative; width:100%; aspect-ratio:1000/720; border-radius:14px; overflow:hidden;}
+  .mapwrap svg{position:absolute; inset:0; width:100%; height:100%; display:block;}
+
+  .zone-fill{transition:opacity .18s ease, filter .18s ease;}
+  .zone-stroke{transition:stroke-opacity .18s ease, stroke-width .18s ease;}
+  .zone-glow{opacity:0; transition:opacity .2s ease;}
+  .is-hover .zone-fill{filter:brightness(1.12);}
+  .is-hover .zone-glow{opacity:.55;}
+  .is-selected .zone-fill{filter:brightness(1.22);}
+  .is-selected .zone-stroke{stroke-width:3; stroke-opacity:1;}
+  .is-selected .zone-glow{opacity:1;}
+
+  @media (prefers-reduced-motion: reduce){
+    .pulse{animation:none !important;}
+  }
+  .pulse{animation:pulse 3.6s ease-in-out infinite;}
+  @keyframes pulse{
+    0%,100%{opacity:.35;}
+    50%{opacity:.6;}
+  }
+
+  .hit-layer{position:absolute; inset:0;}
+  .hit{
+    position:absolute; border:none; padding:0; margin:0; cursor:pointer;
+    background:rgba(255,255,255,0); transition:background .15s ease;
+  }
+  .hit:hover{background:rgba(251,243,231,0.06);}
+  .hit:focus-visible{outline:2px solid var(--accent); outline-offset:3px;}
+  .hit.circle{border-radius:50%;}
+  .hit.rect{border-radius:16px;}
+  .sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}
+
+  .legend-strip{
+    display:flex; flex-wrap:wrap; gap:16px 22px; margin-top:14px; padding:0 6px;
+    font-size:0.82rem; color:var(--ink-faint);
+  }
+  .legend-strip span{display:inline-flex; align-items:center; gap:7px;}
+  .dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
+
+  /* ---------- ticket console ---------- */
+  .ticket{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:20px;
+    padding:22px; position:sticky; top:20px;
+    box-shadow:0 20px 50px -30px var(--shadow);
+  }
+  @media (max-width:900px){ .ticket{position:static;} }
+
+  .ticket h2{font-size:1.1rem; letter-spacing:0.01em; margin-bottom:4px; font-family:'Inter'; font-weight:700;}
+  .ticket .kicker{font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 16px;}
+
+  .detail{min-height:210px;}
+  .detail.empty{
+    display:flex; flex-direction:column; align-items:flex-start; justify-content:center;
+    color:var(--ink-faint); gap:8px; padding:20px 4px; min-height:210px;
+  }
+  .detail.empty svg{opacity:.55;}
+
+  .tier-name{font-size:clamp(1.5rem,2.6vw,1.9rem); display:flex; align-items:center; gap:10px;}
+  .tier-dot{width:14px; height:14px; border-radius:50%; flex:none;}
+  .tier-desc{color:var(--ink-soft); font-size:0.95rem; margin:8px 0 18px; max-width:44ch;}
+
+  .price-row{display:flex; align-items:baseline; gap:6px; margin-bottom:14px;}
+  .price-row .amount{font-family:'Cormorant SC',serif; font-size:2.3rem; font-weight:700;}
+  .price-row .unit{color:var(--ink-faint); font-size:0.85rem;}
+
+  .avail{margin-bottom:18px;}
+  .avail-row{display:flex; justify-content:space-between; font-size:0.8rem; color:var(--ink-soft); margin-bottom:6px;}
+  .avail-track{height:6px; border-radius:4px; background:var(--line); overflow:hidden;}
+  .avail-fill{height:100%; border-radius:4px;}
+
+  .qty-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+  .qty-row .lbl{font-size:0.88rem; color:var(--ink-soft); font-weight:500;}
+  .stepper{display:flex; align-items:center; gap:0; border:1px solid var(--line-strong); border-radius:10px; overflow:hidden;}
+  .stepper button{
+    width:34px; height:34px; border:none; background:var(--bg-elevated); color:var(--ink);
+    font-size:1.05rem; cursor:pointer; line-height:1;
+  }
+  .stepper button:hover{background:var(--accent); color:var(--accent-ink);}
+  .stepper button:disabled{opacity:.35; cursor:not-allowed; background:var(--bg-elevated); color:var(--ink);}
+  .stepper output{width:34px; text-align:center; font-weight:600; font-variant-numeric:tabular-nums;}
+
+  .divider{border:none; border-top:1px solid var(--line); margin:16px 0;}
+
+  .total-row{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:18px;}
+  .total-row .lbl{color:var(--ink-soft); font-size:0.92rem;}
+  .total-row .amount{font-weight:800; font-size:1.3rem;}
+
+  .cta{
+    width:100%; border:none; border-radius:12px; padding:14px 18px;
+    background:linear-gradient(180deg, var(--accent-soft), var(--accent));
+    color:var(--accent-ink); font-weight:700; font-size:0.98rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .cta:hover:not(:disabled){transform:translateY(-1px); box-shadow:0 10px 24px -10px var(--shadow);}
+  .cta:disabled{opacity:.4; cursor:not-allowed;}
+  .cta:focus-visible{outline:2px solid var(--ink); outline-offset:3px;}
+
+  .handoff{
+    display:none; margin-top:14px; padding:14px 16px; border-radius:12px;
+    background:var(--bg-elevated); border:1px solid var(--line-strong); font-size:0.86rem; color:var(--ink-soft);
+  }
+  .handoff.show{display:block;}
+  .handoff strong{color:var(--ink); display:block; margin-bottom:4px; font-size:0.92rem;}
+  .handoff button{
+    margin-top:10px; background:none; border:none; color:var(--accent-soft); font-weight:600;
+    font-size:0.85rem; cursor:pointer; padding:0;
+  }
+
+  /* ---------- zone list (mirrors the map, primary control on mobile) ---------- */
+  .zone-list{list-style:none; margin:18px 0 0; padding:0; display:flex; flex-direction:column; gap:8px;}
+  .zone-row{
+    width:100%; display:flex; align-items:center; gap:12px; text-align:left;
+    background:var(--bg-elevated); border:1px solid var(--line); border-radius:12px;
+    padding:11px 13px; cursor:pointer; color:var(--ink); font-family:inherit;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .zone-row:hover{border-color:var(--line-strong);}
+  .zone-row[aria-pressed="true"]{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, var(--bg-elevated));}
+  .zone-row:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .zone-row .tier-dot{width:11px; height:11px;}
+  .zone-row .name{font-weight:600; font-size:0.92rem; flex:1;}
+  .zone-row .price{font-weight:700; font-size:0.92rem; font-variant-numeric:tabular-nums;}
+
+  .fineprint{max-width:1180px; margin:28px auto 0; color:var(--ink-faint); font-size:0.8rem;}
+</style>
+
+<header class="venue-header">
+  <p class="eyebrow">Dandiya Festival Pune · 17–19 Oct 2026 · Phoenix Marketcity</p>
+  <h1>Pick your raas circle</h1>
+  <p>The ground has five ways to be part of it — three dance rings around the stage, a raised gallery for watching, and private cabanas stage-left. Tap a zone on the map (or the list) to see what it costs.</p>
+</header>
+
+<main class="console">
+
+  <!-- ============ MAP ============ -->
+  <section class="mapcard" aria-label="Venue floor plan">
+    <div class="mapwrap">
+      <svg viewBox="0 0 1000 720" aria-hidden="true">
+        <defs>
+          <radialGradient id="stageGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.45"/>
+            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+          </radialGradient>
+          <pattern id="skylight" width="46" height="46" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="46" stroke="var(--line)" stroke-width="1"/>
+          </pattern>
+        </defs>
+
+        <!-- atrium shell -->
+        <rect x="40" y="40" width="920" height="580" rx="46" fill="var(--bg-elevated)" stroke="var(--line-strong)" stroke-width="1.5"/>
+        <rect x="40" y="40" width="920" height="580" rx="46" fill="url(#skylight)"/>
+
+        <text x="64" y="26" font-family="Inter" font-size="12" letter-spacing="2" fill="var(--ink-faint)">GROUND LEVEL ATRIUM</text>
+        <text x="936" y="26" text-anchor="end" font-family="Inter" font-size="12" letter-spacing="2" fill="var(--ink-faint)">N ↑</text>
+
+        <!-- ambient stage glow -->
+        <circle class="pulse" cx="500" cy="112" r="180" fill="url(#stageGlow)"/>
+
+        <!-- stage -->
+        <rect x="400" y="80" width="200" height="64" rx="12" fill="var(--accent)" opacity="0.92"/>
+        <text x="500" y="106" text-anchor="middle" font-family="Cormorant SC" font-weight="700" font-size="20" fill="var(--accent-ink)">STAGE</text>
+        <text x="500" y="124" text-anchor="middle" font-family="Inter" font-size="10" letter-spacing="1.5" fill="var(--accent-ink)" opacity="0.85">DJ · DHOL · LIVE SOUND</text>
+
+        <!-- raas rings (largest first, so smaller ones paint on top) -->
+        <g id="svg-ground">
+          <circle class="zone-fill" cx="500" cy="400" r="220" fill="var(--copper)" opacity="0.22"/>
+          <circle class="zone-stroke" cx="500" cy="400" r="220" fill="none" stroke="var(--copper)" stroke-width="1.5" stroke-opacity="0.55" stroke-dasharray="2 6"/>
+          <circle class="zone-glow" cx="500" cy="400" r="220" fill="none" stroke="var(--copper)" stroke-width="3"/>
+        </g>
+        <g id="svg-silver">
+          <circle class="zone-fill" cx="500" cy="400" r="150" fill="var(--silver)" opacity="0.26"/>
+          <circle class="zone-stroke" cx="500" cy="400" r="150" fill="none" stroke="var(--silver)" stroke-width="1.5" stroke-opacity="0.6" stroke-dasharray="2 6"/>
+          <circle class="zone-glow" cx="500" cy="400" r="150" fill="none" stroke="var(--silver)" stroke-width="3"/>
+        </g>
+        <g id="svg-gold">
+          <circle class="zone-fill" cx="500" cy="400" r="75" fill="var(--accent)" opacity="0.55"/>
+          <circle class="zone-stroke" cx="500" cy="400" r="75" fill="none" stroke="var(--accent)" stroke-width="2" stroke-opacity="0.85"/>
+          <circle class="zone-glow" cx="500" cy="400" r="75" fill="none" stroke="var(--accent)" stroke-width="4"/>
+        </g>
+        <text x="500" y="405" text-anchor="middle" font-family="Inter" font-weight="700" font-size="11" letter-spacing="1" fill="var(--accent-ink)">RAAS</text>
+
+        <!-- cabana -->
+        <g id="svg-cabana">
+          <rect class="zone-fill" x="70" y="250" width="230" height="230" rx="22" fill="var(--rose)" opacity="0.22"/>
+          <rect class="zone-stroke" x="70" y="250" width="230" height="230" rx="22" fill="none" stroke="var(--rose)" stroke-width="1.5" stroke-opacity="0.6"/>
+          <rect class="zone-glow" x="70" y="250" width="230" height="230" rx="22" fill="none" stroke="var(--rose)" stroke-width="3"/>
+          <g opacity="0.75">
+            <rect x="95" y="275" width="80" height="52" rx="8" fill="none" stroke="var(--rose)" stroke-width="1.2"/>
+            <rect x="190" y="275" width="80" height="52" rx="8" fill="none" stroke="var(--rose)" stroke-width="1.2"/>
+            <rect x="95" y="345" width="80" height="52" rx="8" fill="none" stroke="var(--rose)" stroke-width="1.2"/>
+            <rect x="190" y="345" width="80" height="52" rx="8" fill="none" stroke="var(--rose)" stroke-width="1.2"/>
+          </g>
+          <text x="185" y="440" text-anchor="middle" font-family="Cormorant SC" font-weight="700" font-size="17" fill="var(--ink)">ROYAL CABANA</text>
+          <text x="185" y="460" text-anchor="middle" font-family="Inter" font-size="10" letter-spacing="1" fill="var(--ink-faint)">PRIVATE PODS</text>
+        </g>
+
+        <!-- gallery -->
+        <g id="svg-gallery">
+          <rect class="zone-fill" x="700" y="250" width="230" height="230" rx="22" fill="var(--teal)" opacity="0.2"/>
+          <rect class="zone-stroke" x="700" y="250" width="230" height="230" rx="22" fill="none" stroke="var(--teal)" stroke-width="1.5" stroke-opacity="0.6"/>
+          <rect class="zone-glow" x="700" y="250" width="230" height="230" rx="22" fill="none" stroke="var(--teal)" stroke-width="3"/>
+          <g opacity="0.75" stroke="var(--teal)" stroke-width="1.2" fill="none">
+            <path d="M720 460 h190"/>
+            <path d="M730 430 h170"/>
+            <path d="M740 400 h150"/>
+            <path d="M750 370 h130"/>
+          </g>
+          <text x="815" y="440" text-anchor="middle" font-family="Cormorant SC" font-weight="700" font-size="17" fill="var(--ink)">SPECTATOR GALLERY</text>
+          <text x="815" y="460" text-anchor="middle" font-family="Inter" font-size="10" letter-spacing="1" fill="var(--ink-faint)">TIERED SEATING</text>
+        </g>
+
+        <!-- stalls row (decorative, not ticketed) -->
+        <g opacity="0.5">
+          <text x="500" y="618" text-anchor="middle" font-family="Inter" font-size="10" letter-spacing="2" fill="var(--ink-faint)">FOOD &amp; CRAFT STALLS</text>
+          <g fill="none" stroke="var(--ink-faint)" stroke-width="1.2">
+            <rect x="110" y="630" width="46" height="26" rx="4"/>
+            <rect x="180" y="630" width="46" height="26" rx="4"/>
+            <rect x="250" y="630" width="46" height="26" rx="4"/>
+            <rect x="320" y="630" width="46" height="26" rx="4"/>
+            <rect x="390" y="630" width="46" height="26" rx="4"/>
+            <rect x="460" y="630" width="46" height="26" rx="4"/>
+            <rect x="530" y="630" width="46" height="26" rx="4"/>
+            <rect x="600" y="630" width="46" height="26" rx="4"/>
+            <rect x="670" y="630" width="46" height="26" rx="4"/>
+            <rect x="740" y="630" width="46" height="26" rx="4"/>
+            <rect x="810" y="630" width="46" height="26" rx="4"/>
+            <rect x="880" y="630" width="20" height="26" rx="4"/>
+          </g>
+        </g>
+
+        <!-- entry gates -->
+        <g font-family="Inter" font-size="10" letter-spacing="1.5" fill="var(--ink-faint)">
+          <path d="M300 700 l14 -18 l14 18" fill="none" stroke="var(--ink-faint)" stroke-width="1.5"/>
+          <text x="314" y="716" text-anchor="middle">ENTRY A</text>
+          <path d="M672 700 l14 -18 l14 18" fill="none" stroke="var(--ink-faint)" stroke-width="1.5"/>
+          <text x="686" y="716" text-anchor="middle">ENTRY B</text>
+        </g>
+
+        <!-- scale -->
+        <g font-family="Inter" font-size="9" fill="var(--ink-faint)">
+          <line x1="64" y1="600" x2="124" y2="600" stroke="var(--ink-faint)" stroke-width="1.2"/>
+          <text x="94" y="614" text-anchor="middle">≈ 20 m</text>
+        </g>
+      </svg>
+
+      <div class="hit-layer">
+        <button class="hit rect" data-zone="cabana" style="left:7%; top:34.7%; width:23%; height:31.9%; z-index:4;">
+          <span class="sr-only">Royal Cabana — ₹4,999 per person, private seating for four</span>
+        </button>
+        <button class="hit rect" data-zone="gallery" style="left:70%; top:34.7%; width:23%; height:31.9%; z-index:4;">
+          <span class="sr-only">Spectator Gallery — ₹999 per person, raised tiered seating</span>
+        </button>
+        <button class="hit circle" data-zone="ground" style="left:28%; top:25%; width:44%; height:61.1%; z-index:1;">
+          <span class="sr-only">Community Ground — ₹599 per person, outer standing ring</span>
+        </button>
+        <button class="hit circle" data-zone="silver" style="left:35%; top:34.7%; width:30%; height:41.7%; z-index:2;">
+          <span class="sr-only">Silver Circle — ₹1,499 per person, second dance ring</span>
+        </button>
+        <button class="hit circle" data-zone="gold" style="left:42.5%; top:45.1%; width:15%; height:20.8%; z-index:3;">
+          <span class="sr-only">Gold Circle — ₹2,499 per person, innermost dance ring</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="legend-strip">
+      <span><span class="dot" style="background:var(--teal);"></span>Plenty left</span>
+      <span><span class="dot" style="background:var(--amber);"></span>Selling fast</span>
+      <span><span class="dot" style="background:var(--rose);"></span>Almost full</span>
+    </div>
+  </section>
+
+  <!-- ============ TICKET CONSOLE ============ -->
+  <aside class="ticket" aria-live="polite">
+    <p class="kicker">Your selection</p>
+
+    <div id="detailEmpty" class="detail empty">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>
+      <p style="margin:0; max-width:30ch;">Tap a ring, cabana, or gallery on the map to see pricing and availability.</p>
+    </div>
+
+    <div id="detailFilled" class="detail" style="display:none;">
+      <h2 class="tier-name"><span class="tier-dot" id="dTierDot"></span><span id="dName"></span></h2>
+      <p class="tier-desc" id="dDesc"></p>
+
+      <div class="price-row"><span class="amount num" id="dPrice"></span><span class="unit" id="dUnit">/ person</span></div>
+
+      <div class="avail">
+        <div class="avail-row"><span id="dAvailLabel"></span><span id="dAvailPct" class="num"></span></div>
+        <div class="avail-track"><div class="avail-fill" id="dAvailFill"></div></div>
+      </div>
+
+      <div class="qty-row">
+        <span class="lbl">Tickets</span>
+        <div class="stepper">
+          <button type="button" id="qtyMinus" aria-label="Decrease quantity">−</button>
+          <output id="qtyOut" class="num">1</output>
+          <button type="button" id="qtyPlus" aria-label="Increase quantity">+</button>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="total-row"><span class="lbl">Total</span><span class="amount num" id="dTotal"></span></div>
+
+      <button class="cta" id="ctaBtn">Continue to payment →</button>
+
+      <div class="handoff" id="handoff">
+        <strong id="hName"></strong>
+        <span id="hLine"></span>
+        <button type="button" id="hEdit">Edit selection</button>
+      </div>
+    </div>
+
+    <ul class="zone-list" id="zoneList"></ul>
+  </aside>
+</main>
+
+<p class="fineprint">Map is illustrative — hall orientation and gate numbers are confirmed on your e-ticket. Prices are per person and include GST.</p>
+
+<script>
+(function(){
+  var zones = [
+    { id:"cabana", name:"Royal Cabana", price:4999, tier:"--rose",
+      desc:"Private raised pods stage-left with cushioned seating for four, a dedicated host and unlimited soft drinks.",
+      availLabel:"Almost full", availPct:92, availVar:"--rose" },
+    { id:"gold", name:"Gold Circle", price:2499, tier:"--accent",
+      desc:"The innermost raas ring — you're dancing three arm-spans from the dhol line and the DJ booth.",
+      availLabel:"Selling fast", availPct:68, availVar:"--amber" },
+    { id:"silver", name:"Silver Circle", price:1499, tier:"--silver",
+      desc:"Full dance-floor access one ring back from centre — same circle, same energy, more room to move.",
+      availLabel:"Selling fast", availPct:45, availVar:"--amber" },
+    { id:"gallery", name:"Spectator Gallery", price:999, tier:"--teal",
+      desc:"Tiered seating on the atrium's upper deck — the best sightline if you'd rather watch than whirl.",
+      availLabel:"Plenty left", availPct:20, availVar:"--teal" },
+    { id:"ground", name:"Community Ground", price:599, tier:"--copper",
+      desc:"The open outer ring — general standing and mingling space with room to move between songs.",
+      availLabel:"Plenty left", availPct:12, availVar:"--teal" }
+  ];
+  var byId = {}; zones.forEach(function(z){ byId[z.id]=z; });
+
+  var fmt = new Intl.NumberFormat("en-IN", { style:"currency", currency:"INR", maximumFractionDigits:0 });
+
+  var state = { selected:null, qty:1, confirmed:false };
+
+  var zoneList = document.getElementById("zoneList");
+  zones.forEach(function(z){
+    var li = document.createElement("li");
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "zone-row";
+    btn.setAttribute("data-zone", z.id);
+    btn.setAttribute("aria-pressed", "false");
+    btn.innerHTML =
+      '<span class="tier-dot" style="background:var(' + z.tier + ')"></span>' +
+      '<span class="name">' + z.name + '</span>' +
+      '<span class="price num">' + fmt.format(z.price) + '</span>';
+    btn.addEventListener("click", function(){ selectZone(z.id); });
+    li.appendChild(btn);
+    zoneList.appendChild(li);
+  });
+
+  var hitButtons = Array.prototype.slice.call(document.querySelectorAll(".hit"));
+  hitButtons.forEach(function(btn){
+    var id = btn.getAttribute("data-zone");
+    btn.addEventListener("click", function(){ selectZone(id); });
+    btn.addEventListener("pointerenter", function(){ setHover(id, true); });
+    btn.addEventListener("pointerleave", function(){ setHover(id, false); });
+    btn.addEventListener("focus", function(){ setHover(id, true); });
+    btn.addEventListener("blur", function(){ setHover(id, false); });
+  });
+
+  function setHover(id, on){
+    var el = document.getElementById("svg-" + id);
+    if (el) el.classList.toggle("is-hover", on);
+  }
+
+  function selectZone(id){
+    state.selected = id;
+    state.qty = 1;
+    state.confirmed = false;
+    render();
+  }
+
+  function render(){
+    zones.forEach(function(z){
+      var svgEl = document.getElementById("svg-" + z.id);
+      var isSel = state.selected === z.id;
+      if (svgEl) svgEl.classList.toggle("is-selected", isSel);
+      var listBtn = document.querySelector('.zone-row[data-zone="' + z.id + '"]');
+      if (listBtn) listBtn.setAttribute("aria-pressed", isSel ? "true" : "false");
+      var hitBtn = document.querySelector('.hit[data-zone="' + z.id + '"]');
+      if (hitBtn) hitBtn.setAttribute("aria-pressed", isSel ? "true" : "false");
+    });
+
+    var empty = document.getElementById("detailEmpty");
+    var filled = document.getElementById("detailFilled");
+
+    if (!state.selected){
+      empty.style.display = "flex";
+      filled.style.display = "none";
+      return;
+    }
+    empty.style.display = "none";
+    filled.style.display = "block";
+
+    var z = byId[state.selected];
+    document.getElementById("dTierDot").style.background = "var(" + z.tier + ")";
+    document.getElementById("dName").textContent = z.name;
+    document.getElementById("dDesc").textContent = z.desc;
+    document.getElementById("dPrice").textContent = fmt.format(z.price);
+    document.getElementById("dAvailLabel").textContent = z.availLabel;
+    document.getElementById("dAvailPct").textContent = z.availPct + "% claimed";
+    var fill = document.getElementById("dAvailFill");
+    fill.style.width = z.availPct + "%";
+    fill.style.background = "var(" + z.availVar + ")";
+
+    document.getElementById("qtyOut").textContent = state.qty;
+    document.getElementById("qtyMinus").disabled = state.qty <= 1;
+    document.getElementById("qtyPlus").disabled = state.qty >= 8;
+    document.getElementById("dTotal").textContent = fmt.format(z.price * state.qty);
+
+    var handoff = document.getElementById("handoff");
+    var cta = document.getElementById("ctaBtn");
+    if (state.confirmed){
+      handoff.classList.add("show");
+      cta.style.display = "none";
+      document.getElementById("hName").textContent = z.name + " × " + state.qty + " — " + fmt.format(z.price * state.qty);
+      document.getElementById("hLine").textContent = "This is the handoff point — wire this button to your payment gateway with the zone, quantity and total shown above.";
+    } else {
+      handoff.classList.remove("show");
+      cta.style.display = "flex";
+    }
+  }
+
+  document.getElementById("qtyMinus").addEventListener("click", function(){
+    if (state.qty > 1){ state.qty--; render(); }
+  });
+  document.getElementById("qtyPlus").addEventListener("click", function(){
+    if (state.qty < 8){ state.qty++; render(); }
+  });
+  document.getElementById("ctaBtn").addEventListener("click", function(){
+    state.confirmed = true; render();
+  });
+  document.getElementById("hEdit").addEventListener("click", function(){
+    state.confirmed = false; render();
+  });
+
+  render();
+})();
+</script>

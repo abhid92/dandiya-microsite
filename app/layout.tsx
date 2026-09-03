@@ -3,18 +3,18 @@ import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://dandiya-festival-pune-2026.abhi-d92.chatgpt.site'),
-  title: 'Dandiya Festival Pune | 17–19 October 2026',
-  description: 'Three unforgettable evenings of Garba, Dandiya, live music and festive celebration at Phoenix Marketcity, Pune.',
+  title: 'Dandiya Festival Pune | 17–18 October 2026',
+  description: 'Two unforgettable evenings of Garba, Dandiya, live music and festive celebration at Phoenix Marketcity, Pune.',
   openGraph: {
     title: 'Dandiya Festival Pune',
-    description: 'Three evenings of Garba, Dandiya, live music and community celebration at Phoenix Marketcity, Pune.',
+    description: 'Two evenings of Garba, Dandiya, live music and community celebration at Phoenix Marketcity, Pune.',
     type: 'website',
     images: [{ url: '/og.png', width: 1731, height: 909, alt: 'Dandiya Festival at Phoenix Marketcity, Pune' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Dandiya Festival Pune',
-    description: 'Three evenings of Garba, Dandiya, live music and community celebration at Phoenix Marketcity, Pune.',
+    description: 'Two evenings of Garba, Dandiya, live music and community celebration at Phoenix Marketcity, Pune.',
     images: ['/og.png'],
   },
 };
